@@ -2,43 +2,52 @@
 
 import matplotlib.pyplot as plt
 
-def moving_average_success(rewards, window=100):
-    """
-    Compute moving average success rate.
-    Success is defined as reward == +1.
-    """
-    success_rate = []
-
-    for i in range(len(rewards)):
-        start = max(0, i - window)
-        window_rewards = rewards[start:i]
-
-        if len(window_rewards) == 0:
-            success_rate.append(0)
-        else:
-            successes = sum(1 for r in window_rewards if r == 1)
-            success_rate.append(successes / len(window_rewards))
-
-    return success_rate
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-def plot_learning_curves(mc_rewards, sarsa_rewards, ql_rewards, window=100):
-    """
-    Plot learning curves for all three RL methods.
-    """
-    mc_curve = moving_average_success(mc_rewards, window)
-    sarsa_curve = moving_average_success(sarsa_rewards, window)
-    ql_curve = moving_average_success(ql_rewards, window)
+def moving_average(data, window=100):
+    return np.convolve(data, np.ones(window)/window, mode='valid')
 
-    plt.figure(figsize=(8, 5))
-    plt.plot(mc_curve, label='Monte Carlo')
-    plt.plot(sarsa_curve, label='SARSA')
-    plt.plot(ql_curve, label='Q-learning')
 
-    plt.xlabel('Episode')
-    plt.ylabel('Success Rate (Moving Average)')
-    plt.title('Learning Progress Comparison')
-    plt.legend()
-    plt.grid(True)
+def plot_learning_curves(mc_metrics, sarsa_metrics, ql_metrics, window=100):
+
+    mc_rewards = np.array(mc_metrics["rewards"])
+    sarsa_rewards = np.array(sarsa_metrics["rewards"])
+    ql_rewards = np.array(ql_metrics["rewards"])
+
+    mc_success = np.array(mc_metrics["success"])
+    sarsa_success = np.array(sarsa_metrics["success"])
+    ql_success = np.array(ql_metrics["success"])
+
+    mc_steps = np.array(mc_metrics["steps"])
+    sarsa_steps = np.array(sarsa_metrics["steps"])
+    ql_steps = np.array(ql_metrics["steps"])
+
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4))
+
+    # Success rate
+    axs[0].plot(moving_average(mc_success, window), label="Monte Carlo")
+    axs[0].plot(moving_average(sarsa_success, window), label="SARSA")
+    axs[0].plot(moving_average(ql_success, window), label="Q-learning")
+    axs[0].set_title("Success Rate")
+    axs[0].legend()
+    axs[0].grid(True)
+
+    # Reward
+    axs[1].plot(moving_average(mc_rewards, window))
+    axs[1].plot(moving_average(sarsa_rewards, window))
+    axs[1].plot(moving_average(ql_rewards, window))
+    axs[1].set_title("Average Reward")
+    axs[1].grid(True)
+
+    # Steps
+    axs[2].plot(mc_steps, alpha=0.5)
+    axs[2].plot(sarsa_steps, alpha=0.5)
+    axs[2].plot(ql_steps, alpha=0.5)
+    axs[2].set_title("Steps per Episode")
+    axs[2].grid(True)
+
+    plt.suptitle("RL Algorithm Comparison")
     plt.tight_layout()
     plt.show()
