@@ -16,10 +16,54 @@ class FrozenLakeEnv:
         # Total number of states
         self.n_states = self.rows * self.cols
         self.n_actions = len(ACTIONS)
+# env.py
+
+from config import (
+    GRID_ROWS,
+    GRID_COLS,
+    START_STATE,
+    GOAL_STATE,
+    HOLES
+)
+
+class FrozenLakeEnv:
+
+    def __init__(self):
+
+        self.rows = GRID_ROWS
+        self.cols = GRID_COLS
+
+        self.start_state = START_STATE
+        self.goal_state = GOAL_STATE
+        self.holes = HOLES
+
+        self.state = self.start_state
+
+        # 🔥 Automatically generate grid
+        self.grid = self._generate_grid()
+
+    def _generate_grid(self):
+
+        grid = [['F' for _ in range(self.cols)]
+                for _ in range(self.rows)]
+
+        # Set start
+        r, c = self.start_state
+        grid[r][c] = 'S'
+
+        # Set goal
+        r, c = self.goal_state
+        grid[r][c] = 'G'
+
+        # Set holes
+        for r, c in self.holes:
+            grid[r][c] = 'H'
+
+        return grid
 
     def reset(self):
         """Reset environment to starting state."""
-        self.state = self.start
+        self.state = self.start_state
         return self.state_to_index(self.state)
 
     def step(self, action):
@@ -35,7 +79,7 @@ class FrozenLakeEnv:
         new_c = min(max(c + dc, 0), self.cols - 1)
         self.state = (new_r, new_c)
 
-        if self.state == self.goal:
+        if self.state == self.goal_state:
             return self.state_to_index(self.state), 1, True
 
         if self.state in self.holes:

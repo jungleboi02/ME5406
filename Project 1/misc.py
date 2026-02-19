@@ -1,0 +1,270 @@
+# misc.py
+
+import matplotlib.pyplot as plt
+import numpy as np
+from config import ACTIONS, GRID_ROWS, GRID_COLS, HOLES, GOAL_STATE
+import random
+
+arrow_map = {
+    'LEFT': '←',
+    'DOWN': '↓',
+    'RIGHT': '→',
+    'UP': '↑'
+}
+
+ACTION_TO_DELTA = {
+    'UP':    (-1, 0),
+    'DOWN':  (1, 0),
+    'LEFT':  (0, -1),
+    'RIGHT': (0, 1)
+}
+
+# 1. Epsilon-greedy action selection policy
+def epsilon_greedy(Q, state, epsilon):
+    """
+    Select an action using the textbook epsilon-greedy policy:
+    - Greedy action gets probability: 1 - epsilon + epsilon/|A|
+    - All other actions get probability: epsilon/|A|
+    """
+    q_values = Q[state]
+    max_q = max(q_values.values())
+
+    # Identify greedy actions (handle ties)
+    greedy_actions = [a for a, q in q_values.items() if q == max_q]
+
+    # Choose one greedy action uniformly if ties exist
+    greedy_action = random.choice(greedy_actions)
+
+    num_actions = len(ACTIONS)
+    probs = []
+    
+    # Build probability distribution
+    for action in ACTIONS:
+        if action == greedy_action:
+            probs.append(1 - epsilon + epsilon / num_actions)
+        else:
+            probs.append(epsilon / num_actions)
+
+    # Sample according to probability distribution
+    return random.choices(ACTIONS, weights=probs, k=1)[0]
+
+# 2. Print policy in grid format
+def print_policy(Q, env):
+    """
+    Print the optimal policy derived from Q in grid form.
+    """
+    for r in range(GRID_ROWS):
+        row = []
+        for c in range(GRID_COLS):
+            state = (r, c)
+
+            if state == GOAL_STATE:
+                row.append(' G ')
+            elif state in HOLES:
+                row.append(' H ')
+            else:
+                s_idx = env.state_to_index(state)
+                best_action = max(Q[s_idx], key=Q[s_idx].get)
+                row.append(f' {arrow_map[best_action]} ')
+        print(''.join(row))
+    print()
+
+def moving_average(data, window=500):
+    return np.convolve(data, np.ones(window)/window, mode='valid')
+
+def plot_single_algorithm(metrics, algo_name):
+
+    rewards = metrics["rewards"]
+    steps = metrics["steps"]
+    success = metrics["success"]
+
+    acc = np.cumsum(success) / np.arange(1, len(success)+1)
+
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    fig.suptitle(f"{algo_name} Performance")
+
+    # Reward curve
+    axs[0, 0].plot(moving_average(rewards))
+    axs[0, 0].set_title("Average Reward")
+
+    # Steps curve
+    axs[0, 1].plot(moving_average(steps))
+    axs[0, 1].set_title("Average Steps")
+
+    # Accuracy curve
+    axs[1, 0].plot(acc)
+    axs[1, 0].set_title("Accuracy (Success Rate)")
+
+    # Success vs Failure bar
+    total_success = sum(success)
+    total_fail = len(success) - total_success
+
+    axs[1, 1].bar(["Success", "Failure"], [total_success, total_fail])
+    axs[1, 1].set_title("Success vs Failure")
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_comparison(metrics_dict):
+    """
+    metrics_dict = {
+        "MC": mc_metrics,
+        "SARSA": sarsa_metrics,
+        "Q-Learning": ql_metrics
+    }
+    """
+
+    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle("Algorithm Comparison")
+
+    for name, metrics in metrics_dict.items():
+        rewards = metrics["rewards"]
+        steps = metrics["steps"]
+        success = metrics["success"]
+
+        acc = np.cumsum(success) / np.arange(1, len(success)+1)
+
+        axs[0, 0].plot(moving_average(rewards), label=name)
+        axs[0, 1].plot(moving_average(steps), label=name)
+        axs[1, 0].plot(acc, label=name)
+
+    axs[0, 0].set_title("Average Reward")
+    axs[0, 1].set_title("Average Steps")
+    axs[1, 0].set_title("Accuracy")
+
+    axs[0, 0].legend()
+    axs[0, 1].legend()
+    axs[1, 0].legend()
+
+    # Success comparison bar chart
+    labels = list(metrics_dict.keys())
+    success_counts = []
+    fail_counts = []
+
+    for metrics in metrics_dict.values():
+        s = sum(metrics["success"])
+        f = len(metrics["success"]) - s
+        success_counts.append(s)
+        fail_counts.append(f)
+
+    x = np.arange(len(labels))
+    width = 0.35
+
+    axs[1, 1].bar(x - width/2, success_counts, width, label="Success")
+    axs[1, 1].bar(x + width/2, fail_counts, width, label="Failure")
+    axs[1, 1].set_xticks(x)
+    axs[1, 1].set_xticklabels(labels)
+    axs[1, 1].set_title("Success vs Failure Comparison")
+    axs[1, 1].legend()
+
+    plt.tight_layout()
+    plt.show()
+
+import matplotlib.pyplot as plt
+
+def plot_policy(Q, env, grid_size, algo_name):
+    """
+    Plots the final policy for a given RL algorithm on the Frozen Lake grid.
+    Q: learned Q-values
+    env: environment
+    grid_size: number of rows/cols
+    algo_name: string for title
+    """
+
+    grid = env.grid
+
+    plt.figure(figsize=(6,6))
+    plt.title(f"{algo_name} Final Policy")
+
+    # Draw tiles
+    for r in range(grid_size):
+        for c in range(grid_size):
+            tile = grid[r][c]
+
+            # Tile colors
+            if tile == 'H':
+                color = 'black'
+            elif tile == 'G':
+                color = 'green'
+            elif tile == 'S':
+                color = 'blue'
+            else:
+                color = 'white'
+
+            plt.gca().add_patch(
+                plt.Rectangle((c, r), 1, 1, color=color, ec='gray')
+            )
+
+            # Draw arrow for the best action on frozen tiles only
+            if tile in ['F', 'S'] and env.state_to_index((r,c)) in Q:
+                best_action = max(Q[env.state_to_index((r,c))], key=Q[env.state_to_index((r,c))].get)
+                arrow = arrow_map.get(best_action, "")
+                plt.text(c + 0.5, r + 0.5, arrow, ha='center', va='center', fontsize=18, color='red')
+
+    # Format plot
+    plt.xlim(0, grid_size)
+    plt.ylim(0, grid_size)
+    plt.xticks(range(grid_size))
+    plt.yticks(range(grid_size))
+    plt.gca().invert_yaxis()
+    plt.gca().set_aspect('equal')
+    plt.grid(True)
+    plt.show()
+
+def plot_policy_path(Q, env, grid_size, algo_name):
+    """
+    Same as plot_policy but also shows the path from start to goal.
+    """
+    import matplotlib.pyplot as plt
+
+    grid = env.grid
+    arrow_map = {'LEFT':'←','RIGHT':'→','UP':'↑','DOWN':'↓'}
+
+    plt.figure(figsize=(6,6))
+    plt.title(f"{algo_name} Policy & Path")
+
+    # Draw tiles
+    for r in range(grid_size):
+        for c in range(grid_size):
+            tile = grid[r][c]
+            color = 'white'
+            if tile == 'H': color='black'
+            elif tile=='S': color='blue'
+            elif tile=='G': color='green'
+            plt.gca().add_patch(plt.Rectangle((c,r),1,1,color=color,ec='gray'))
+
+    # Draw arrows for policy
+    state = env.start_state
+    path = [state]
+
+    while state != env.goal_state:
+        s_idx = env.state_to_index(state)
+        if s_idx not in Q:
+            break
+        best_action = max(Q[s_idx], key=Q[s_idx].get)
+        arrow = arrow_map[best_action]
+        r,c = state
+        plt.text(c+0.5, r+0.5, arrow, ha='center', va='center', fontsize=18, color='red')
+
+        # Move to next state according to policy
+        dr, dc = ACTION_TO_DELTA[best_action]
+        next_state = (r+dr, c+dc)
+
+        # Stop if next_state is hole or out of bounds
+        if next_state in env.holes or not (0 <= next_state[0]<grid_size and 0<=next_state[1]<grid_size):
+            break
+
+        path.append(next_state)
+        state = next_state
+
+    # Optionally, draw path line
+    path_rows = [s[0]+0.5 for s in path]
+    path_cols = [s[1]+0.5 for s in path]
+    plt.plot(path_cols, path_rows, color='yellow', linewidth=2, marker='o')
+
+    plt.xlim(0, grid_size)
+    plt.ylim(0, grid_size)
+    plt.gca().invert_yaxis()
+    plt.gca().set_aspect('equal')
+    plt.grid(True)
+    plt.show()

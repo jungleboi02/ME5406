@@ -1,7 +1,7 @@
 from collections import defaultdict
 import random
 from config import *
-from utilities import epsilon_greedy
+from misc import epsilon_greedy
 
 def monte_carlo_control(env):
     Q = defaultdict(lambda: {a: 0.0 for a in ACTIONS})

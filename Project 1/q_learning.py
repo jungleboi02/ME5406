@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from config import *
-from utilities import epsilon_greedy
+from misc import epsilon_greedy
 
 def q_learning(env):
     Q = defaultdict(lambda: {a: 0.0 for a in ACTIONS})
