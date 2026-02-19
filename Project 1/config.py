@@ -7,6 +7,7 @@ GRID_COLS = 10
 
 # Start and goal states
 START_STATE = (0, 0)
+# GOAL_STATE = (3, 3)
 GOAL_STATE = (9, 9)
 
 # Holes for the Frozen Lake environment
@@ -27,9 +28,9 @@ ACTION_TO_DELTA = {
 }
 
 # Reinforcement Learning parameters
-DISCOUNT = 0.99
-ALPHA = 0.1
-EPSILON = 0.05
-NUM_EPISODES = 10000
-MAX_STEPS_PER_EPISODE = 250
+DISCOUNT = 0.9
+ALPHA = 0.3
+EPSILON = 0.01
+NUM_EPISODES = 1000000
+MAX_STEPS_PER_EPISODE = 75
 

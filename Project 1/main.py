@@ -36,17 +36,12 @@ def main():
     print_policy(Q_ql, env)
 
     print("Training completed.")
-    print(f"Monte Carlo time: {mc_time:.2f}s")
-    print(f"SARSA time: {sarsa_time:.2f}s")
-    print(f"Q-learning time: {ql_time:.2f}s")
+    print("\nTraining Time Comparison:")
+    print(f"Monte Carlo time: {mc_time:.3f}s")
+    print(f"SARSA time: {sarsa_time:.3f}s")
+    print(f"Q-learning time: {ql_time:.3f}s")
 
     plot_learning_curves(mc_metrics, sarsa_metrics, ql_metrics)
-    print("\nTraining Time Comparison:")
-
-    print(f"Monte Carlo: {mc_time:.3f} sec")
-    print(f"SARSA: {sarsa_time:.3f} sec")
-    print(f"Q-learning: {ql_time:.3f} sec")
-
 
 if __name__ == "__main__":
     main()
