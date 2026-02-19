@@ -7,6 +7,12 @@ from sarsa import sarsa
 from q_learning import q_learning
 from utilities import print_policy, moving_average
 import time
+from visualisation import (
+    plot_single_algorithm,
+    plot_comparison,
+    plot_policy
+)
+from config import GRID_ROWS
 
 def main():
     env = FrozenLakeEnv()
@@ -41,7 +47,25 @@ def main():
     print(f"SARSA time: {sarsa_time:.3f}s")
     print(f"Q-learning time: {ql_time:.3f}s")
 
-    plot_learning_curves(mc_metrics, sarsa_metrics, ql_metrics)
+    # plot_learning_curves(mc_metrics, sarsa_metrics, ql_metrics)
+
+    metrics_dict = {
+        "Monte Carlo": mc_metrics,
+        "SARSA": sarsa_metrics,
+        "Q-Learning": ql_metrics
+    }
+
+    plot_single_algorithm(mc_metrics, "Monte Carlo")
+    plot_policy(Q_mc, GRID_ROWS, "Monte Carlo")
+
+    plot_single_algorithm(sarsa_metrics, "SARSA")
+    plot_policy(Q_sarsa, GRID_ROWS, "SARSA")
+
+    plot_single_algorithm(ql_metrics, "Q-Learning")
+    plot_policy(Q_ql, GRID_ROWS, "Q-Learning")
+
+    plot_comparison(metrics_dict)
+
 
 if __name__ == "__main__":
     main()

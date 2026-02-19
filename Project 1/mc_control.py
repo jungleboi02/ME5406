@@ -18,7 +18,7 @@ def monte_carlo_control(env):
         episode_data = []
         state = env.reset()
         total_reward = 0
-        epsilon = max(0.05, 1.0 - episode / 50000)
+        epsilon = max(EPSILON, 1.0 - episode / 50000)
 
         for step in range(MAX_STEPS_PER_EPISODE):
             action = epsilon_greedy(Q, state, epsilon)
