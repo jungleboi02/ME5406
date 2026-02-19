@@ -14,7 +14,7 @@ def sarsa(env):
     for episode in range(NUM_EPISODES):
 
         state = env.reset()
-        epsilon = max(0.05, 1.0 - episode / 50000)
+        epsilon = max(EPSILON, 1.0 - episode / 50000)
         action = epsilon_greedy(Q, state, epsilon)
 
         total_reward = 0

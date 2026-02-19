@@ -99,8 +99,15 @@ def plot_single_algorithm(metrics, algo_name):
     total_success = sum(success)
     total_fail = len(success) - total_success
 
-    axs[1, 1].bar(["Success", "Failure"], [total_success, total_fail])
+    axs[1, 1].bar(
+        ["Success", "Failure"], 
+        [total_success, total_fail],
+        color=['tab:blue', 'red'],  # default matplotlib blue for success
+        edgecolor='black'
+    )
+
     axs[1, 1].set_title("Success vs Failure")
+
 
     plt.tight_layout()
     plt.show()
@@ -150,8 +157,14 @@ def plot_comparison(metrics_dict):
     x = np.arange(len(labels))
     width = 0.35
 
-    axs[1, 1].bar(x - width/2, success_counts, width, label="Success")
-    axs[1, 1].bar(x + width/2, fail_counts, width, label="Failure")
+    axs[1, 1].bar(
+        x - width/2, success_counts, width,
+        label="Success", color='tab:blue', edgecolor='black'
+    )
+    axs[1, 1].bar(
+        x + width/2, fail_counts, width,
+        label="Failure", color='red', edgecolor='black'
+    )
     axs[1, 1].set_xticks(x)
     axs[1, 1].set_xticklabels(labels)
     axs[1, 1].set_title("Success vs Failure Comparison")
@@ -159,8 +172,6 @@ def plot_comparison(metrics_dict):
 
     plt.tight_layout()
     plt.show()
-
-import matplotlib.pyplot as plt
 
 def plot_policy(Q, env, grid_size, algo_name):
     """
@@ -212,59 +223,67 @@ def plot_policy(Q, env, grid_size, algo_name):
     plt.show()
 
 def plot_policy_path(Q, env, grid_size, algo_name):
-    """
-    Same as plot_policy but also shows the path from start to goal.
-    """
     import matplotlib.pyplot as plt
-
-    grid = env.grid
     arrow_map = {'LEFT':'←','RIGHT':'→','UP':'↑','DOWN':'↓'}
 
     plt.figure(figsize=(6,6))
     plt.title(f"{algo_name} Policy & Path")
 
-    # Draw tiles
-    for r in range(grid_size):
-        for c in range(grid_size):
-            tile = grid[r][c]
-            color = 'white'
-            if tile == 'H': color='black'
-            elif tile=='S': color='blue'
-            elif tile=='G': color='green'
-            plt.gca().add_patch(plt.Rectangle((c,r),1,1,color=color,ec='gray'))
-
-    # Draw arrows for policy
+    # Follow greedy policy to get path
     state = env.start_state
     path = [state]
+    visited = set()
 
     while state != env.goal_state:
         s_idx = env.state_to_index(state)
+
         if s_idx not in Q:
             break
+        if state in visited:
+            break
+        visited.add(state)
+
         best_action = max(Q[s_idx], key=Q[s_idx].get)
-        arrow = arrow_map[best_action]
-        r,c = state
-        plt.text(c+0.5, r+0.5, arrow, ha='center', va='center', fontsize=18, color='red')
-
-        # Move to next state according to policy
         dr, dc = ACTION_TO_DELTA[best_action]
-        next_state = (r+dr, c+dc)
+        next_state = (state[0]+dr, state[1]+dc)
 
-        # Stop if next_state is hole or out of bounds
-        if next_state in env.holes or not (0 <= next_state[0]<grid_size and 0<=next_state[1]<grid_size):
+        if (next_state[0] < 0 or next_state[0] >= grid_size or
+            next_state[1] < 0 or next_state[1] >= grid_size or
+            next_state in env.holes):
             break
 
         path.append(next_state)
         state = next_state
 
-    # Optionally, draw path line
-    path_rows = [s[0]+0.5 for s in path]
-    path_cols = [s[1]+0.5 for s in path]
-    plt.plot(path_cols, path_rows, color='yellow', linewidth=2, marker='o')
+    # Draw tiles with path highlighted
+    for r in range(grid_size):
+        for c in range(grid_size):
+            tile = env.grid[r][c]
+            color = 'white'
+            if tile == 'H': color='black'
+            elif tile=='G': color='green'
+            elif tile=='S': color='blue'
+            if (r, c) in path and (r, c) != env.start_state and (r, c) != env.goal_state:
+                color = '#fff5b1'  # light yellow
+            plt.gca().add_patch(plt.Rectangle((c,r),1,1,color=color,ec='gray'))
+
+    # Draw policy arrows
+    for r in range(grid_size):
+        for c in range(grid_size):
+            s_idx = env.state_to_index((r,c))
+            if s_idx in Q and (r,c) not in env.holes and (r,c) != env.goal_state:
+                best_action = max(Q[s_idx], key=Q[s_idx].get)
+                plt.text(c+0.5, r+0.5, arrow_map[best_action],
+                         ha='center', va='center', fontsize=16, color='red')
 
     plt.xlim(0, grid_size)
     plt.ylim(0, grid_size)
     plt.gca().invert_yaxis()
     plt.gca().set_aspect('equal')
     plt.grid(True)
+
+    # Show only major grid lines (integers)
+    plt.xticks(range(grid_size + 1))
+    plt.yticks(range(grid_size + 1))
+    plt.grid(which='major')  # only major ticks
     plt.show()
