@@ -1,46 +1,75 @@
+"""
+Monte Carlo Control (First-Visit, Incremental)
+
+Key Idea:
+- Learn from complete episodes.
+- Update Q-values after episode ends.
+- No bootstrapping.
+"""
+
 from collections import defaultdict
-import random
 from config import *
 from misc import epsilon_greedy
 
 def monte_carlo_control(env):
+
+    # Initialize Q-table:
+    # For every new state encountered,
+    # create a dictionary mapping each action → 0.0
     Q = defaultdict(lambda: {a: 0.0 for a in ACTIONS})
+
     episode_rewards = []
     episode_steps = []
     episode_success = []
 
-    alpha = 0.01  # incremental MC step size
+    alpha = 0.01  # incremental learning rate
 
+    # ==========================================
+    # Main training loop over episodes
+    # ==========================================
     for episode in range(NUM_EPISODES):
-        # if episode % 1000 == 0:
-        #     print("Episode:", episode)
 
-        episode_data = []
+        episode_data = []  # will store (state, action, reward)
         state = env.reset()
         total_reward = 0
-        # epsilon = max(EPSILON, 1.0 - episode / 50000)
-        epsilon=EPSILON
 
+        # --------------------------------------
+        # Generate one full episode
+        # --------------------------------------
         for step in range(MAX_STEPS_PER_EPISODE):
-            action = epsilon_greedy(Q, state, epsilon)
+
+            # Choose action via epsilon-greedy
+            action = epsilon_greedy(Q, state, EPSILON)
+
+            # Take action in environment
             next_state, reward, done = env.step(action)
+
+            # Store transition
             episode_data.append((state, action, reward))
+
             total_reward += reward
             state = next_state
 
             if done:
                 break
-        else:
-            # Episode reached max steps
-            pass
 
-        # Incremental first-visit MC update
+        # --------------------------------------
+        # Backward return computation
+        # --------------------------------------
         G = 0
         visited = set()
+
+        # Loop backward through episode
         for state, action, reward in reversed(episode_data):
+
+            # Compute return
             G = DISCOUNT * G + reward
+
+            # First-visit condition
             if (state, action) not in visited:
                 visited.add((state, action))
+
+                # Incremental MC update
                 Q[state][action] += alpha * (G - Q[state][action])
 
         episode_rewards.append(total_reward)
