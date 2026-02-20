@@ -1,7 +1,6 @@
 # main.py
 
 import time
-from config import GRID_ROWS
 from env import FrozenLakeEnv
 from mc_control import monte_carlo_control
 from sarsa import sarsa
@@ -11,7 +10,6 @@ from misc import (
     print_policy,
     plot_single_algorithm,
     plot_comparison,
-    plot_policy
 )
 
 def main():

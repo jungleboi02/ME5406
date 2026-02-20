@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from config import ACTIONS, GRID_ROWS, GRID_COLS, HOLES, GOAL_STATE
+from config import ACTIONS, ACTION_TO_DELTA, GRID_ROWS, GRID_COLS, HOLES, GOAL_STATE
 import random
 
 arrow_map = {
@@ -10,13 +10,6 @@ arrow_map = {
     'DOWN': '↓',
     'RIGHT': '→',
     'UP': '↑'
-}
-
-ACTION_TO_DELTA = {
-    'UP':    (-1, 0),
-    'DOWN':  (1, 0),
-    'LEFT':  (0, -1),
-    'RIGHT': (0, 1)
 }
 
 # 1. Epsilon-greedy action selection policy
@@ -171,55 +164,6 @@ def plot_comparison(metrics_dict):
     axs[1, 1].legend()
 
     plt.tight_layout()
-    plt.show()
-
-def plot_policy(Q, env, grid_size, algo_name):
-    """
-    Plots the final policy for a given RL algorithm on the Frozen Lake grid.
-    Q: learned Q-values
-    env: environment
-    grid_size: number of rows/cols
-    algo_name: string for title
-    """
-
-    grid = env.grid
-
-    plt.figure(figsize=(6,6))
-    plt.title(f"{algo_name} Final Policy")
-
-    # Draw tiles
-    for r in range(grid_size):
-        for c in range(grid_size):
-            tile = grid[r][c]
-
-            # Tile colors
-            if tile == 'H':
-                color = 'black'
-            elif tile == 'G':
-                color = 'green'
-            elif tile == 'S':
-                color = 'blue'
-            else:
-                color = 'white'
-
-            plt.gca().add_patch(
-                plt.Rectangle((c, r), 1, 1, color=color, ec='gray')
-            )
-
-            # Draw arrow for the best action on frozen tiles only
-            if tile in ['F', 'S'] and env.state_to_index((r,c)) in Q:
-                best_action = max(Q[env.state_to_index((r,c))], key=Q[env.state_to_index((r,c))].get)
-                arrow = arrow_map.get(best_action, "")
-                plt.text(c + 0.5, r + 0.5, arrow, ha='center', va='center', fontsize=18, color='red')
-
-    # Format plot
-    plt.xlim(0, grid_size)
-    plt.ylim(0, grid_size)
-    plt.xticks(range(grid_size))
-    plt.yticks(range(grid_size))
-    plt.gca().invert_yaxis()
-    plt.gca().set_aspect('equal')
-    plt.grid(True)
     plt.show()
 
 def plot_policy_path(Q, env, grid_size, algo_name):
